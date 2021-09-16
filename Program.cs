@@ -1,124 +1,140 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace CompressorDecompressor
+namespace Vending_Machine
 {
     class Program
     {
+
         static void Main(string[] args)
         {
-            // ================== File Compressor and Decompressor ======================
-            string nullTest = null;
-            Console.WriteLine(FileCompressor(nullTest));            // Your string is null.
-            Console.WriteLine(FileCompressor(""));                  // Your string is empty.
-            Console.WriteLine(FileCompressor("RTFFFFYYUPPPEEEUU")); // RTF4YYUP3E3UU
-            Console.WriteLine(FileCompressor("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBCCCCCCCCCCC"));    // A100BBC11
-            Console.WriteLine(FileCompressor("AMAAAAN"));           // AMA4N
-            Console.WriteLine("");
+            var vendingMachine = new Dictionary<int, int>(){
+            {20, 5},
+            {10, 10},
+            {5, 10},
+            {2, 10},
+            {1, 10}};
 
-            Console.WriteLine(FileDecompressor(nullTest));     // Your string is null.
-            Console.WriteLine(FileDecompressor(""));           // Your string is empty.
-            Console.WriteLine(FileDecompressor("A11BBC3D4"));  // AAAAAAAAAAABBCCCDDDD
-            Console.WriteLine(FileDecompressor("AMA4N"));      // AMAAAAN
-            Console.WriteLine(FileDecompressor("AAB5CCD4"));   // AABBBBBCCDDDD
-            Console.WriteLine(FileDecompressor("A100BBC11"));  // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBCCCCCCCCCCC
-        
+            Console.WriteLine("\n\n                        ============================");
+            Console.WriteLine("                        || ABHI's Vending Machine ||");
+            Console.WriteLine("                        ============================");
+            PrintDictionary(vendingMachine);
+
+            Console.WriteLine(BuyNow(vendingMachine, 2, 25));
+            //Your change is 23.
+            //20$: 1 piece
+            //2$: 1 piece
+            //1$: 1 piece
+            //Thank you for shopping.
+
+            Console.WriteLine(BuyNow(vendingMachine, 2, -25));  // Invalid Insert money.
+            Console.WriteLine(BuyNow(vendingMachine, 2, 0));    // Paid money is not enough.
+            Console.WriteLine(BuyNow(vendingMachine, -2, 25));  // Invalid item price.
+            Console.WriteLine(BuyNow(vendingMachine, 0, 25));   // Invalid item price.
+
+            Console.WriteLine(BuyNow(vendingMachine, 2, 2));
+            // Your change is 0.
+            //Thank you for shopping.
+
+            Console.WriteLine(BuyNow(vendingMachine, 2, 130));
+            //Your change is 128.
+            //20$: 4 piece
+            //10$: 4 piece
+            //5$: 1 piece
+            //2$: 1 piece
+            //1$: 1 piece
+            //Thank you for shopping.
+
+            Console.WriteLine(BuyNow(vendingMachine, 2, 300));
+            //Transaction cancel.
+            //Sorry, machine is out of money.
+            //Please insert lower amount of money.
+
+            Console.WriteLine(BuyNow(vendingMachine, 2, 30));
+            //Your change is 28.
+            //10$: 2 piece
+            //5$: 1 piece
+            //2$: 1 piece
+            //1$: 1 piece
+            //Thank you for shopping.
+
+            PrintDictionary(vendingMachine);
+
         }
-        static string FileCompressor(string str)
+
+        static void PrintDictionary(Dictionary<int, int> myDict)
         {
-            Console.WriteLine($"\n====================== Compressing file: {str} ======================");
-            if (str == null)
+            Console.WriteLine("\n========================== Print vendingMachine ===========================");
+            foreach(var item in myDict)
             {
-                return ("Your string is null.");
+                Console.WriteLine($"{item.Key}$: {item.Value} piece");
             }
-            if (str.Length == 0)
+        }
+
+        static void updateVendingMachine(Dictionary<int, int> tempDictionary, Dictionary<int, int> vendingMachine)
+        {
+            for (int i = 0; i < tempDictionary.Count; i++)
             {
-                return ("Your string is empty.");
+                vendingMachine[vendingMachine.ElementAt(i).Key] = tempDictionary.ElementAt(i).Value;
             }
-            str += " ";
-            string fileName = "";
-            int charCount = 1;
-            int temp;
-            for (int i = 1; i < str.Length; i++)
+        }
+
+        static string BuyNow(Dictionary<int, int> vendingMachine, int itemPrice, int paidMoney)
+        {
+            Console.WriteLine($"\n======================== BuyNow(vendingMachine, {itemPrice}, {paidMoney}) ====================");
+            Dictionary<int, int> tempDictionary = new Dictionary<int, int>(vendingMachine);
+            int moneyToReturn;
+            int counter = 0;
+            int coinValue;
+            string result = "";
+            if (itemPrice <= 0)
             {
-                if (charCount < 3)
+                return "Invalid item price.";
+            }
+
+            if (paidMoney < itemPrice)
+            {
+                if (paidMoney < 0)
                 {
-                    fileName += str[i - 1];
+                    return "Invalid Insert money.";
                 }
                 else
                 {
-                    temp = charCount - 1;
-                    while (temp != 0)
-                    {
-                        fileName = fileName.Remove(fileName.Length - 1);
-                        temp /= 10;
-                    }
-                    fileName += charCount;
+                    return "Paid money is not enough.";
                 }
-
-                if (str[i - 1] == str[i])
-                {
-                    charCount++;
-                }
-                else
-                {
-                    charCount = 1;
-                }
-            }
-            return fileName;
-        }
-
-        static bool isNum(char c)
-        {
-            int charToASCII = Convert.ToInt32(c);
-            if (charToASCII > 47 && charToASCII < 58)
-            {
-                return true;
             }
             else
             {
-                return false;
+                moneyToReturn = paidMoney - itemPrice;
+                result += $"Your change is {moneyToReturn}. \n";
             }
+
+            while (moneyToReturn > 0)
+            {
+                if(counter >= tempDictionary.Count)
+                {
+                    return "Transaction cancel. \nSorry, machine is out of money. \nPlease insert lower amount of money.";
+                }
+                coinValue = tempDictionary.ElementAt(counter).Key;
+                int numberOfCoins = moneyToReturn / coinValue;
+                if (tempDictionary[coinValue] < numberOfCoins)
+                {
+                    numberOfCoins = tempDictionary[coinValue];
+                }
+                if (numberOfCoins > 0)
+                {
+                    result += coinValue + "$: " + numberOfCoins + " piece \n";
+                    tempDictionary[coinValue] = tempDictionary[coinValue] - numberOfCoins;
+                }
+                moneyToReturn = moneyToReturn - (coinValue * numberOfCoins);
+                counter++;
+            }
+
+            updateVendingMachine(tempDictionary, vendingMachine);
+            result += "Thank you for shopping.";
+            return result;
         }
-        static string FileDecompressor(string str)
-        {
-            Console.WriteLine($"\n====================== Decompressing file: {str} ======================");
-            if (str == null)
-            {
-                return ("Your string is null.");
-            }
-            if (str.Length == 0)
-            {
-                return ("Your string is empty.");
-            }
-            str += " ";
-            int count = 0;
-            string fileName = "";
-            for (int i = 0; i < str.Length; i++)
-            {
-                if (!isNum(str[i]))
-                {
-                    fileName += str[i];
-                }
-
-                while (isNum(str[i]))
-                {
-                    count *= 10;
-                    count += (str[i] - 48);
-                    i++;
-                }
-
-                for (int j = 1; j < count; j++)
-                {
-                    fileName += fileName[fileName.Length - 1];
-                }
-
-                if (count > 0)
-                {
-                    count = 0;
-                    i--;
-                }
-            }
-            return fileName;
-        }
+        
     }
 }
